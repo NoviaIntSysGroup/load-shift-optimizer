@@ -1,0 +1,59 @@
+# Archive files
+*.tar
+*.zip
+*.gzip
+*.gz
+
+# Data files
+*.csv
+*.txt
+*.parquet
+*.xls
+
+# External configurations
+.claude/
+.vscode/
+
+# Virtual envs
+.venv*
+
+# pytest
+.coverage
+
+# Pickle files
+*.pkl
+
+# Generated figures
+*.pdf
+*.png
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Environments
+.env
+
+# Mac file systems
+*.DS_Store
+
+# Setup.py
+.eggs
+*.egg-info
+
+# LaTeX
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.dvi
+*.log
+*.out
+*.synctex.gz
+*.toc
+*.xml
+
