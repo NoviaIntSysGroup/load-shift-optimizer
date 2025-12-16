@@ -1,0 +1,64 @@
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
+
+[project]
+name = "loadshift"
+description = "Optimize load shifting based on known prices and a given flexibility level"
+authors = [{name = "Johan Westö", email = "johan.westo@gmail.com"}, {name = "Hafiz Muhammad Ahmad Imam", email = "ahmadimam657@gmail.com"}]
+license = { file = "LICENSE" }
+readme = "README.md"
+requires-python = ">=3.12"
+dynamic = ["version"]
+dependencies = [
+    "cffi>=2.0.0",
+    "mip>=1.14.0",
+    "numpy>=2.3.5",
+    "pandas>=2.3.3",
+    "tqdm>=4.67.1",
+]
+
+[project.optional-dependencies]
+gurobi = [
+    "gurobipy>=13.0.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/NoviaIntSysGroup/load-shift-optimizer"
+Repository = "https://github.com/NoviaIntSysGroup/load-shift-optimizer"
+
+[tool.uv]
+default-groups = ["dev"]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.1.0",
+    "mpl-panel-builder>=0.6.1",
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.14.9",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+fix = true
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "RUF", "B", "N", "UP", "C4", "T20", "A", "ANN001", "ANN201", "ANN202"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=loadshift"
+pythonpath = ["src"]
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/loadshift"]
+
+[tool.uv-dynamic-versioning]
+fallback-version = "0.0.0"
+style = "semver"
+strict = true
