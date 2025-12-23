@@ -47,6 +47,9 @@ fix = true
 [tool.ruff.lint]
 select = ["E", "F", "I", "RUF", "B", "N", "UP", "C4", "T20", "A", "ANN001", "ANN201", "ANN202"]
 
+[tool.ruff.lint.per-file-ignores]
+"assets/*.py" = ["T201"]  # Allow print statements in CLI utility scripts
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--cov=loadshift"

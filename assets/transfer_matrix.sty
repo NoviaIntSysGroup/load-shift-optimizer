@@ -1,0 +1,80 @@
+\ProvidesPackage{transfer_matrix}
+
+\RequirePackage{tikz}
+\usetikzlibrary{calc,fit}
+\usepackage{graphicx}
+% ===== Parameters =====
+\newcommand{\demandDelay}{3}
+\newcommand{\demandAdvance}{2}
+\newcommand{\gridSize}{9}
+\newcommand{\pixelSize}{5mm}
+\newcommand{\unit}{1mm}
+\newcommand{\textSize}{\scriptsize}
+\newcommand{\tinySize}{\tiny}
+
+\def\sep{\pixelSize}
+\def\legSep{0.333*\pixelSize}
+\def\lineWidth{1pt} % A good practice is to define line width
+%\def\textSize{\small} % An example of a defined font size
+
+% ===== Colors =====
+\colorlet{activeColor}{gray!20!white}
+\colorlet{idleColor}{gray!80!white}
+
+
+% ===== Styles =====
+\tikzset{
+    basePixel/.style={draw=white, inner sep=0, outer sep=0,
+                      minimum width=\pixelSize, minimum height=\pixelSize},
+    validPixel/.style={basePixel, fill=activeColor},
+    invalidPixel/.style={basePixel, fill=idleColor},
+    externalBorder/.style={draw=black, line width=\lineWidth},
+    textNode/.style={draw=none, inner sep=0, outer sep=0, font=\textSize},
+    mathSymbol/.style={textNode, minimum width=\sep},
+    paddedText/.style={draw=none, font=\textSize}
+}
+
+% ===== Main Drawing Macro =====
+\newcommand{\TransferMatrix}{%
+    % ---- Pixel grid ----
+    \foreach \i in {1,...,\gridSize} {
+        \foreach \j [evaluate=\j as \style using
+            {((\i - \j > \demandAdvance) || (\j - \i > \demandDelay) || (\j == \i) ) ? "invalidPixel" : "validPixel"}
+        ] in {1,...,\gridSize} {
+            \node[\style] (pixel-\i-\j)
+            at ({\j*\pixelSize},{-\i*\pixelSize}) {};
+        }
+    }
+    
+    % ---- Coordinates ----
+    \coordinate (gridTopRight) at (pixel-1-\gridSize.north east);
+    \coordinate (gridTopLeft) at (pixel-1-1.north west);
+    \coordinate (gridBottomRight) at (pixel-\gridSize-\gridSize.south east);
+    \coordinate (gridBottomLeft) at (pixel-\gridSize-1.south west);
+    \coordinate (gridCenter) at ($ (pixel-1-1)!0.5!(pixel-\gridSize-\gridSize) $);
+
+    % ---- Border ----
+    \draw[externalBorder] (gridBottomLeft) -- (gridTopLeft) -- (gridTopRight);
+    
+    % ---- ADD TO ----
+    \foreach \j in {1,...,\gridSize} {
+        \node[validPixel, yshift=-\sep, anchor=north] (add-\j) at (pixel-\gridSize-\j.south) {};
+        \node[validPixel, yshift=-\sep, anchor=north] (demandh-\j) at (add-\j.south) {};
+        \node[validPixel, yshift=-\sep, anchor=north] (maxPurchase-\j) at (demandh-\j.south) {};
+    }
+    \draw[externalBorder] (add-1.north west) -- (add-1.south west);
+    \draw[externalBorder] (add-\gridSize.north east) -- (add-\gridSize.south east);
+    \draw[externalBorder] (demandh-1.north west) -- (demandh-1.south west);
+    \draw[externalBorder] (demandh-\gridSize.north east) -- (demandh-\gridSize.south east);
+    \draw[externalBorder] (maxPurchase-1.north west) -- (maxPurchase-1.south west) --
+    (maxPurchase-\gridSize.south east) -- (maxPurchase-\gridSize.north east);
+    % ---- REMOVE FROM ----
+    \foreach \i in {1,...,\gridSize} {
+        \node[validPixel, xshift=\sep, anchor=west] (remove-\i) at (pixel-\i-\gridSize.east) {};
+        \node[validPixel, xshift=\sep, anchor=west] (demand-\i) at (remove-\i.east) {};
+    }
+    \draw[externalBorder] (remove-1.north west) -- (remove-1.north east);
+    \draw[externalBorder] (remove-\gridSize.south west) -- (remove-\gridSize.south east);
+    \draw[externalBorder] (demand-1.north west) -- (demand-1.north east) --
+    (demand-\gridSize.south east) -- (demand-\gridSize.south west);
+}

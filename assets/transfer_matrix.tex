@@ -1,0 +1,54 @@
+\documentclass[tikz,11pt]{standalone}
+
+% Fonts and math
+\usepackage{amsmath,amssymb}
+\usepackage[scaled]{helvet}
+\renewcommand\familydefault{\sfdefault}
+\usepackage{sfmath}
+
+% Import your package
+\usepackage{transfer_matrix}
+
+\begin{document}
+\begin{tikzpicture}[x=\unit, y=\unit]
+
+    % ===== Draw Transfer Matrix from .sty =====
+    \TransferMatrix
+
+    % ===== Axes ticks =====
+    \foreach \ij/\h/\v in {1/1/1, 2/2/2, 3/3/3, 4/\dots/\vdots, \gridSize/\gridSize/\gridSize} {
+      \node[paddedText, anchor=south] (jTick-\ij) at (pixel-1-\ij.north) {\h};
+      \node[paddedText, anchor=east] (iTick-\ij) at (pixel-\ij-1.west) {\v};
+    }
+
+    % ===== Axes labels =====
+    \node[textNode, anchor=south] at (gridCenter|-jTick-1.north) {$j$};
+    \node[textNode, anchor=east] at (gridCenter-|iTick-1.west) {$i$};
+    \node[paddedText, anchor=south east, align=center] at (gridTopLeft) {Time\\slots};
+
+    % ===== "Remove from demand" side labels =====
+    \node[textNode, rotate=90] at (gridCenter-|remove-1) {Removed from Demand};
+    \node[textNode, xshift=-\sep] at (gridCenter-|remove-1) {$\sum_j$};
+    \node[textNode, xshift=\sep] at (gridCenter-|remove-1) {$\leq$};
+    \node[textNode, rotate=90] at (gridCenter-|demand-1) {Original Demand};
+
+    % ===== "Add to demand" side labels =====
+    \node[textNode] at (gridCenter|-add-1) {Added to Demand};
+    \node[textNode, yshift=\sep] at (gridCenter|-add-1) {$\sum_i$};
+    \node[textNode, yshift=-\sep] at (gridCenter|-add-1) {$+$};
+    \node[textNode] at (gridCenter|-demandh-1) {Original Demand};
+    \node[textNode, yshift=-\sep] at (gridCenter|-demandh-1) {$\leq$};
+    \node[textNode] at (gridCenter|-maxPurchase-1) {Max Purchase per Hour};
+
+    % ===== Legend =====
+    % Active
+    \node[validPixel, xshift=\sep, yshift=-\legSep, anchor=west] (active) at (add-\gridSize.east) {};
+    \node[mathSymbol, anchor=west] (sym) at (active.east) { $\ge$};
+    \node[textNode, anchor=west] at (sym.east) {$0$};
+    % Idle
+    \node[invalidPixel, yshift=-\legSep, anchor=north] (idle) at (active.south) {};
+    \node[mathSymbol, anchor=west] (sym) at (idle.east) { $=$};
+    \node[textNode, anchor=west] at (sym.east) { $0$};
+
+\end{tikzpicture}
+\end{document}

@@ -1,0 +1,229 @@
+\documentclass[tikz, 11pt]{standalone}
+
+% Packages
+\usepackage{amsmath,amssymb}
+\usepackage[scaled]{helvet}
+\renewcommand\familydefault{\sfdefault}
+% Settings
+\usetikzlibrary{calc, patterns}
+
+% Font sizes
+%\newcommand{\tinySize}{\tiny}			% tiny corresponds to 6 pt
+\newcommand{\textSize}{\scriptsize}		% scriptsize corresponds to 8 pt
+%\newcommand{\headingSize}{\small}		% small corresponds to 10 pt
+%\newcommand{\labelSize}{\large}			% Large corresponds to 12 pt and bf for bold face
+
+% Colors
+%\definecolor{exampleHTML}{HTML}{DC3912}
+%\definecolor{exampleRGB}{rgb}{0.8500, 0.850, 0.85}
+\colorlet{activeColor}{gray!20!white}
+\colorlet{idleColor}{gray!80!white}
+
+% Variables
+\newcommand{\unit}{1mm}
+\newcommand{\pixelSize}{2.5mm}
+\newcommand{\gridSize}{30} % Must be equal to or larger than 5
+\newcommand{\lineWidth}{1pt}
+\newcommand{\demandDelay}{3}
+\newcommand{\demandAdvance}{2}
+\newcommand{\sep}{\pixelSize}
+\newcommand{\legSep}{0.333*\sep}
+\newcommand{\controlHoursStart}{13}
+\newcommand{\controlHours}{6}
+\newcommand{\lookAheadHours}{9}
+\newcommand{\fadeFactor}{0.2}
+
+\pgfmathtruncatemacro{\ijActiveStart}{max(1, min(\gridSize, \controlHoursStart))}
+\pgfmathtruncatemacro{\ijActiveEnd}{min(\gridSize, \controlHoursStart + \lookAheadHours - 1)}
+\pgfmathtruncatemacro{\iHistoryStart}{max(1, \controlHoursStart - \demandDelay)} % vertical top 
+\pgfmathtruncatemacro{\jHistoryStart}{max(1, \controlHoursStart - \demandAdvance)} % horizontal left
+\pgfmathtruncatemacro{\ijcontrolEnd}{min(\gridSize, \controlHoursStart + \controlHours - 1)}
+
+% Styles
+\tikzstyle{basePixel}=[draw=white, inner sep=0, outer sep=0, minimum width=\pixelSize, minimum height=\pixelSize]
+\tikzstyle{validPixel}=[basePixel, fill=activeColor]
+\tikzstyle{invalidPixel}=[basePixel, fill=idleColor]
+\tikzstyle{externalBorder}=[draw=black, line width=\lineWidth]
+\tikzstyle{controlBorder}=[draw=black, dashed, line width=\lineWidth]
+\tikzstyle{textNode}=[draw=none, inner sep=0, outer sep=0, font=\textSize]
+\tikzstyle{mathSymbol}=[textNode, minimum width=\sep]
+\tikzstyle{paddedText}=[draw=none, font=\textSize]
+\tikzstyle{specialPixel}=[basePixel, pattern=north east lines, pattern color=red!70!black]
+\tikzstyle{historyPixel}=[specialPixel, pattern color=red!70!black]
+\tikzstyle{spilloverPixel}=[specialPixel, pattern color=blue!70!black]
+\begin{document}
+\begin{tikzpicture}[x=\unit, y=\unit]
+
+%--------------------------------------------------------------------
+% ------------------- TRANSFER MATRIX ------------------
+%--------------------------------------------------------------------
+% Generate named grid of pixels
+\foreach \i in {1,...,\gridSize} {
+  \foreach \j in {1,...,\gridSize} {
+    % Check if the pixel is a valid transfer target
+    \pgfmathsetmacro{\isValid}{
+  	  ifthenelse(
+      	(\i - \j > \demandAdvance) || 
+      	(\j - \i > \demandDelay) || 
+      	(\j == \i), 
+      	0, 1
+    	  )
+    	}
+    	
+  	% Fade out pixels that are outside the current lookahead region
+  	\pgfmathsetmacro{\isActive}{
+      ifthenelse(
+        (\i >= \ijActiveStart) && 
+        (\i <= \ijActiveEnd) &&
+        (\j >= \ijActiveStart) && 
+        (\j <= \ijActiveEnd),
+        1, 0
+      )
+    }
+    
+    % Add the pixel
+    \pgfmathsetmacro{\opac}{\isActive == 1 ? 1 : \fadeFactor}
+    \ifnum\isValid=1
+    	  \node[validPixel, opacity=\opac] (pixel-\i-\j) at (\j*\pixelSize, -\i*\pixelSize) {};
+    	\else
+    	  \node[invalidPixel, opacity=\opac] (pixel-\i-\j) at (\j*\pixelSize, -\i*\pixelSize) {};
+    	\fi
+    	
+    % Color history pixels
+    \pgfmathsetmacro{\isHistory}{
+      ifthenelse(
+        \isValid &&
+        (
+          ((\i < \controlHoursStart) && (\j >= \controlHoursStart)) ||
+          ((\j < \controlHoursStart) && (\i >= \controlHoursStart))
+        ),
+        1, 0
+      )
+    }
+    \ifnum\isHistory=1
+      \node[historyPixel] at (\j*\pixelSize, -\i*\pixelSize) {};
+    	\fi
+    	
+    	% Color spillover pixels
+    \pgfmathsetmacro{\isSpillover}{
+      ifthenelse(
+        \isValid &&
+        \isActive &&
+        (
+          ((\i >= \controlHoursStart + \controlHours) && (\j < \controlHoursStart + \controlHours)) ||
+          ((\j >= \controlHoursStart + \controlHours) && (\i < \controlHoursStart + \controlHours))
+        ),
+        1, 0
+      )
+    }
+    \ifnum\isSpillover=1
+      \node[spilloverPixel] at (\j*\pixelSize, -\i*\pixelSize) {};
+    	\fi
+  }
+}
+
+% Grid locations
+\coordinate (gridTopRight)    at (pixel-1-\gridSize.north east);
+\coordinate (gridTopLeft)    at (pixel-1-1.north west);
+\coordinate (gridBottomLeft)  at (pixel-\gridSize-1.south west);
+\coordinate (gridActiveCenter) at ($ (pixel-\ijActiveStart-\ijActiveStart)!0.5!(pixel-\ijActiveEnd-\ijActiveEnd) $);
+
+% Draw external border
+\draw[externalBorder] (gridBottomLeft) -- (gridTopLeft) -- (gridTopRight);
+
+%Control Horizon Border
+\coordinate (controlTopLeft)     at (pixel-\ijActiveStart-\ijActiveStart.north west);
+\coordinate (controlTopRight)    at (pixel-\ijActiveStart-\ijcontrolEnd.north east);
+\coordinate (controlBottomLeft)  at (pixel-\ijcontrolEnd-\ijActiveStart.south west);
+\coordinate (controlBottomRight) at (pixel-\ijcontrolEnd-\ijcontrolEnd.south east);
+\draw[controlBorder] (controlTopLeft) -- (controlTopRight) -- (controlBottomRight) -- (controlBottomLeft) -- cycle;
+                     
+%--------------------------------------------------------------------
+% ------------------- REMOVE FROM ------------------------
+%--------------------------------------------------------------------
+% Add vector elements for remove from and demand
+\foreach \i [evaluate=\i as \opac using {
+	ifthenelse((\i>=\ijActiveStart) && (\i<=\ijActiveEnd), 1, \fadeFactor)
+  }] in {1,...,\gridSize} {
+  \node[validPixel, opacity=\opac, xshift=\sep, anchor=west] (remove-\i) at (pixel-\i-\gridSize.east) {};
+  \node[validPixel, opacity=\opac, xshift=\sep, anchor=west] (demandVer-\i) at (remove-\i.east) {};
+  % Color hours with historical constraints
+  \pgfmathsetmacro{\isHistory}{ifthenelse((\i >= \iHistoryStart) && (\i < \ijActiveStart), 1, 0)}
+  \ifnum\isHistory=1
+    \node[historyPixel, xshift=\sep, anchor=west] at (pixel-\i-\gridSize.east) {};
+    \node[historyPixel, , xshift=\sep, anchor=west] (demandVer-\i) at (remove-\i.east) {};
+  \fi
+}
+
+\draw[externalBorder] 
+  (remove-\iHistoryStart.north west) -- (remove-\iHistoryStart.north east) % top border
+  (remove-\ijActiveEnd.south west) -- (remove-\ijActiveEnd.south east); % bottom border
+  
+\draw[externalBorder]
+  (demandVer-\iHistoryStart.north west) -- (demandVer-\iHistoryStart.north east) --
+  (demandVer-\ijActiveEnd.south east) -- (demandVer-\ijActiveEnd.south west); % bottom border
+ 
+%Draw maths signs
+\coordinate (iHistoryCenter) at ($ (pixel-\iHistoryStart-1.north)!0.5!(pixel-\ijActiveStart-1.north) $);
+\node[textNode, xshift=-\sep] at (gridActiveCenter-|remove-1) {$\Sigma$};
+\node[textNode, xshift=-\sep] at (gridActiveCenter-|demandVer-1) {$\leq$};
+\ifnum\iHistoryStart<\ijActiveStart
+  \node[textNode, xshift=-\sep] at (iHistoryCenter-|demandVer-1) {$=$};
+\fi
+
+%--------------------------------------------------------------------
+% ------------------- ADD TO -----------------------------------
+%--------------------------------------------------------------------
+% Add vector elements for added, demand, and maxPurchase
+\foreach \j [evaluate=\j as \opac using {
+	ifthenelse((\j>=\ijActiveStart) && (\j<=\ijActiveEnd), 1, \fadeFactor)
+  }] in {1,...,\gridSize} {
+  \node[validPixel, opacity=\opac, yshift=-\sep, anchor=north] (add-\j) at (pixel-\gridSize-\j.south) {};
+  \node[validPixel, opacity=\opac, yshift=-\sep, anchor=north] (demandHor-\j) at (add-\j.south) {};
+  \node[validPixel, opacity=\opac, yshift=-\sep, anchor=north] (maxPurchase-\j) at (demandHor-\j.south) {};
+  % Color hours with historical constraints
+  \pgfmathsetmacro{\isHistory}{ifthenelse((\j >= \jHistoryStart) && (\j < \ijActiveStart), 1, 0)}
+  \ifnum\isHistory=1
+    \node[historyPixel, yshift=-\sep, anchor=north] (add-\j) at (pixel-\gridSize-\j.south) {};
+    \node[historyPixel, yshift=-\sep, anchor=north] (demandHor-\j) at (add-\j.south) {};
+  \fi
+}
+
+% Draw external border of Horizontal Vectors
+\draw[externalBorder] (add-\jHistoryStart.north west) -- (add-\jHistoryStart.south west);
+\draw[externalBorder] (add-\ijActiveEnd.north east) -- (add-\ijActiveEnd.south east);
+
+\draw[externalBorder] (demandHor-\jHistoryStart.north west) -- (demandHor-\jHistoryStart.south west) --
+  (demandHor-\ijActiveStart.south west);
+\draw[externalBorder] (demandHor-\ijActiveEnd.north east) -- (demandHor-\ijActiveEnd.south east);
+
+\draw[externalBorder] (maxPurchase-\ijActiveStart.north west) -- (maxPurchase-\ijActiveStart.south west) -- 
+	(maxPurchase-\ijActiveEnd.south east) -- (maxPurchase-\ijActiveEnd.north east);
+
+%Draw maths signs
+\coordinate (jHistoryCenter) at ($ (pixel-1-\jHistoryStart.west)!0.5!(pixel-1-\ijActiveStart.west) $);
+\node[textNode, yshift=\sep] at (gridActiveCenter|-add-1) {$\Sigma$};
+\node[textNode, yshift=-\sep] at (gridActiveCenter|-add-1) {$+$};
+\node[textNode, yshift=-\sep] at (gridActiveCenter|-demandHor-1) {$\leq$};
+\ifnum\jHistoryStart<\ijActiveStart
+  \node[textNode, yshift=-\sep] at (jHistoryCenter|-add-1) {$=$};
+\fi
+%--------------------------------------------------------------------
+% ------------------- LEGEND -----------------------------------
+%--------------------------------------------------------------------
+% History
+\node[historyPixel, xshift=\sep, yshift=-\legSep, anchor=west] (active) at (add-\gridSize.east) {};
+\node[mathSymbol, anchor=west] (sym) at (active.east) {$=$};
+\node[textNode, anchor=west] at (sym.east) {History};
+% Spillover
+\node[spilloverPixel, yshift=-\legSep, anchor=north] (idle) at (active.south) {};
+\node[mathSymbol, anchor=west] (sym) at (idle.east) {$=$};
+\node[textNode, anchor=west] at (sym.east) {Spillover};
+% Control
+\node[basePixel, yshift=-\legSep, anchor=north] (control) at (idle.south) {};
+\draw[controlBorder] (control.north west) -- (control.north east) -- (control.south east) -- (control.south west) -- cycle;
+\node[mathSymbol, anchor=west] (sym) at (control.east) {$=$};
+\node[textNode, anchor=west] at (sym.east) {Control};
+
+\end{tikzpicture}
+\end{document}

@@ -26,6 +26,7 @@
 # Generated figures
 *.pdf
 *.png
+*.gif
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -56,4 +57,8 @@ __pycache__/
 *.synctex.gz
 *.toc
 *.xml
+
+# LaTeX build directories
+assets/temp/
+assets/build/
 

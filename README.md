@@ -25,8 +25,8 @@
 
 ## Features
 
-* ⚡ **Cost Optimization** - Shift loads optimally to minimize costs based on known electricity prices.  
-* 🎛️ **Flexible Constraints** - Define how many hours loads can shift earlier or later, transfer rate limits, and power capacity to match your use case.  
+* ⚡ **Cost Optimization** - Shift loads optimally to minimize costs based on known electricity prices.
+* 🎛️ **Flexible Constraints** - Define how many hours loads can shift earlier or later, transfer rate limits, and power capacity to match your use case.
 * 📅 **Moving Horizon** - Daily optimization approach that replicates real-world day-ahead market scenarios.
 
 ## Example
@@ -127,6 +127,9 @@ optimized = result["results"]
 print(optimized.head())
 ```
 
+## Documentation
+Check out our paper [Residential demand response: evaluating how much consumers could actually save](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5956838) for further details on how the package can be used to answer interesting research questions. Also see [TECHNICAL_DOC.md](TECHNICAL_DOC.md) for a more detailed explanation of the transfer matrix formulation and the moving horizon control strategy.
+
 ## Development
 
 Install development requirements and set up the hooks:
@@ -160,6 +163,13 @@ Please ensure your code follows our style guidelines:
 - Follow Google's Python style guide for docstrings
 - Include type annotations for all functions
 - Add tests for new functionality
+
+## Citation
+
+If you use this software in your research, please cite:  
+
+**Westö, J. & Imam, H. (2025)**, Residential demand response: evaluating how much consumers could actually save.  
+Available at SSRN: https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5956838
 
 ## Acknowledgements
 This tool was developed within the "Demand response - Promoting electricity demand response management in
