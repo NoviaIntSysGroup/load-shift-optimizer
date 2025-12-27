@@ -3,7 +3,7 @@
 Supports both python-mip (open-source) and Gurobi (commercial) solvers.
 """
 
-from typing import Any
+from typing import Any, Dict, Optional
 
 import numpy as np
 
@@ -143,9 +143,9 @@ class VirtualStorage:
         self,
         price: np.ndarray,
         demand: np.ndarray,
-        remove_from_history: np.ndarray | None = None,
-        add_to_history: np.ndarray | None = None,
-        n_control_hours: int | None = None,
+        remove_from_history: Optional[np.ndarray] = None,
+        add_to_history: Optional[np.ndarray] = None,
+        n_control_hours: Optional[int] = None,
         debug: bool = False,
     ) -> dict:
         """Optimize energy consumption using the transfer matrix approach.
@@ -302,7 +302,7 @@ class VirtualStorage:
         model: Any,
         ranges: TimeRanges,
         transfer_indices: TransferIndices,
-    ) -> dict[str, dict]:
+    ) -> Dict[str, dict]:
         """Create all decision variables for the transfer matrix optimization.
 
         Uses the solver adapter to create variables in a solver-agnostic way.
@@ -354,7 +354,7 @@ class VirtualStorage:
     def _add_objective_function(
         self,
         model: Any,
-        variables: dict[str, dict],
+        variables: Dict[str, dict],
         price: np.ndarray,
         ranges: TimeRanges,
     ) -> None:
@@ -380,7 +380,7 @@ class VirtualStorage:
     def _add_spillover_constraints(
         self,
         model: Any,
-        variables: dict[str, dict],
+        variables: Dict[str, dict],
         ranges: TimeRanges,
         transfer_indices: TransferIndices,
         remove_from_history: np.ndarray,
@@ -434,7 +434,7 @@ class VirtualStorage:
     def _add_control_constraints(
         self,
         model: Any,
-        variables: dict[str, dict],
+        variables: Dict[str, dict],
         ranges: TimeRanges,
         transfer_indices: TransferIndices,
         demand: np.ndarray,
@@ -504,7 +504,7 @@ class VirtualStorage:
     def _add_charge_direction_constraints(
         self,
         model: Any,
-        variables: dict[str, dict],
+        variables: Dict[str, dict],
         ranges: TimeRanges,
     ) -> None:
         """Add charge direction mutual exclusivity constraints.
@@ -539,7 +539,7 @@ class VirtualStorage:
 
     def _validate_optional_array(
         self,
-        array: np.ndarray | None,
+        array: Optional[np.ndarray],
         expected_size: int,
         name: str,
         default_value: float = 0.0,
@@ -579,7 +579,7 @@ class VirtualStorage:
         self,
         price: np.ndarray,
         demand: np.ndarray,
-        n_control_hours: int | None,
+        n_control_hours: Optional[int],
     ) -> tuple[int, int]:
         """Initialize and validate time parameters for optimization."""
         # Validate array lengths match

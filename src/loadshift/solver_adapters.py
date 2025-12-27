@@ -3,7 +3,7 @@
 Provides a unified interface for different MILP solvers (Gurobi, python-mip/CBC).
 """
 
-from typing import Any
+from typing import Any, List, Optional
 
 from .utils import get_logger
 
@@ -22,7 +22,7 @@ class SolverAdapter:
         model: Any,
         name: str,
         lb: float = 0,
-        ub: float | None = None,
+        ub: Optional[float] = None,
         vtype: str = "continuous",
     ) -> Any:
         """Add a variable to the model.
@@ -40,7 +40,7 @@ class SolverAdapter:
         raise NotImplementedError
 
     def add_constraint(
-        self, model: Any, constraint: Any, name: str | None = None
+        self, model: Any, constraint: Any, name: Optional[str] = None
     ) -> None:
         """Add a constraint to the model.
 
@@ -51,7 +51,7 @@ class SolverAdapter:
         """
         raise NotImplementedError
 
-    def sum(self, variables: list[Any]) -> Any:
+    def sum(self, variables: List[Any]) -> Any:
         """Create a sum expression from variables.
 
         Args:
@@ -110,7 +110,7 @@ class GurobiAdapter(SolverAdapter):
         model: Any,
         name: str,
         lb: float = 0,
-        ub: float | None = None,
+        ub: Optional[float] = None,
         vtype: str = "continuous",
     ) -> Any:
         """Add a variable to the Gurobi model."""
@@ -123,12 +123,12 @@ class GurobiAdapter(SolverAdapter):
         return model.addVar(**kwargs)
 
     def add_constraint(
-        self, model: Any, constraint: Any, name: str | None = None
+        self, model: Any, constraint: Any, name: Optional[str] = None
     ) -> None:
         """Add a constraint to the Gurobi model."""
         model.addConstr(constraint, name=name)
 
-    def sum(self, variables: list[Any]) -> Any:
+    def sum(self, variables: List[Any]) -> Any:
         """Create a sum expression using Gurobi's quicksum."""
         import gurobipy as gp
 
@@ -188,7 +188,7 @@ class MipAdapter(SolverAdapter):
         model: Any,
         name: str,
         lb: float = 0,
-        ub: float | None = None,
+        ub: Optional[float] = None,
         vtype: str = "continuous",
     ) -> Any:
         """Add a variable to the python-mip model."""
@@ -201,12 +201,12 @@ class MipAdapter(SolverAdapter):
         return model.add_var(**kwargs)
 
     def add_constraint(
-        self, model: Any, constraint: Any, name: str | None = None
+        self, model: Any, constraint: Any, name: Optional[str] = None
     ) -> None:
         """Add a constraint to the python-mip model."""
         model += constraint
 
-    def sum(self, variables: list[Any]) -> Any:
+    def sum(self, variables: List[Any]) -> Any:
         """Create a sum expression using Python's built-in sum."""
         return sum(variables)
 
