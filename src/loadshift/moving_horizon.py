@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from typing import List, Tuple
 from tqdm import tqdm
 
 from .utils import get_logger
@@ -9,7 +10,7 @@ logger = get_logger(__name__)
 
 
 def _compute_control_hours(
-    horizons: list[tuple[pd.Timestamp, pd.Timestamp]], horizon_idx: int
+    horizons: List[Tuple[pd.Timestamp, pd.Timestamp]], horizon_idx: int
 ) -> int:
     """Compute the number of control hours for a given horizon, accounting for DST.
 
@@ -41,7 +42,7 @@ def _compute_control_hours(
 
 def _create_horizons(
     datetime_index: pd.DatetimeIndex, daily_decision_hour: int, horizon_length: int
-) -> list[tuple[pd.Timestamp, pd.Timestamp]]:
+) -> List[Tuple[pd.Timestamp, pd.Timestamp]]:
     """Create optimization horizon start and end times.
 
     Each horizon extends from a decision time to

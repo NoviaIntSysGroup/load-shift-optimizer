@@ -8,19 +8,23 @@ description = "Optimize load shifting based on known prices and a given flexibil
 authors = [{name = "Johan Westö", email = "johan.westo@gmail.com"}, {name = "Hafiz Muhammad Ahmad Imam", email = "ahmadimam657@gmail.com"}]
 license = { file = "LICENSE" }
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.9"
 dynamic = ["version"]
 dependencies = [
-    "cffi>=2.0.0",
+    "cffi<2.0.0",
     "mip>=1.14.0",
-    "numpy>=2.3.5",
-    "pandas>=2.3.3",
+    "numpy<2.0.0",
+    "pandas<2.0.0",
     "tqdm>=4.67.1",
 ]
 
 [project.optional-dependencies]
 gurobi = [
     "gurobipy>=13.0.0"
+]
+api = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
 ]
 
 [project.urls]
@@ -32,16 +36,18 @@ default-groups = ["dev"]
 
 [dependency-groups]
 dev = [
+    "httpx>=0.28.1",
     "ipykernel>=7.1.0",
     "mpl-panel-builder>=0.6.1",
     "pytest>=9.0.2",
     "pytest-cov>=7.0.0",
+    "requests>=2.32.0",
     "ruff>=0.14.9",
 ]
 
 [tool.ruff]
 line-length = 88
-target-version = "py312"
+target-version = "py39"
 fix = true
 
 [tool.ruff.lint]

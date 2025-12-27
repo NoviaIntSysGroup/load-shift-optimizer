@@ -53,6 +53,20 @@ By default, this installs the free open-source MIP solver (CBC backend). For bet
 pip install loadshift[gurobi]
 ```
 
+### API Server Installation
+
+To use the REST API server, install with API dependencies:
+
+```bash
+pip install loadshift[api]
+```
+
+Or install with both API and Gurobi support:
+
+```bash
+pip install loadshift[api,gurobi]
+```
+
 ### From source (for examples and development)
 
 If you want to explore the examples or contribute to the project, follow these steps to install from source:
@@ -65,8 +79,14 @@ $ cd load-shift-optimizer
 # install package and development dependencies (with MIP solver)
 $ uv sync
 
+# OR install with API support
+$ uv sync --extra api
+
 # OR install with Gurobi support (requires a license)
 $ uv sync --extra gurobi
+
+# OR install with both API and Gurobi
+$ uv sync --extra api --extra gurobi
 ```
 
 ## Usage
@@ -126,6 +146,107 @@ result = moving_horizon(price_data, demand_data, config)
 optimized = result["results"]
 print(optimized.head())
 ```
+
+## API Usage
+
+The load-shift-optimizer can also be used as a REST API service, enabling deployment and remote access without requiring Python library integration.
+
+### Starting the API Server
+
+After installing with API dependencies, start the server:
+
+```bash
+# Using the example script
+python examples/run_api.py
+
+# Or directly with uvicorn
+uvicorn loadshift.api:app --reload --host 0.0.0.0 --port 8000
+```
+
+The API will be available at:
+- **Swagger UI**: http://localhost:8000/docs (interactive API documentation)
+- **ReDoc**: http://localhost:8000/redoc (alternative documentation)
+- **OpenAPI Schema**: http://localhost:8000/openapi.json
+
+### API Endpoints
+
+#### Health Check
+```bash
+curl http://localhost:8000/health
+```
+
+#### Basic Optimization
+```bash
+curl -X POST http://localhost:8000/api/v1/optimize \
+  -H "Content-Type: application/json" \
+  -d '{
+    "price": [30, 80, 20, 40, 35, 25],
+    "demand": [10, 15, 8, 12, 10, 9],
+    "max_demand_advance": 2,
+    "max_demand_delay": 3,
+    "max_hourly_purchase": 20,
+    "max_rate": 10
+  }'
+```
+
+#### Moving Horizon Optimization
+```bash
+curl -X POST http://localhost:8000/api/v1/optimize/moving-horizon \
+  -H "Content-Type: application/json" \
+  -d '{
+    "price_data": {
+      "timestamps": ["2024-01-01T00:00:00", "2024-01-01T01:00:00", ...],
+      "values": [30, 35, 40, ...]
+    },
+    "demand_data": {
+      "timestamps": ["2024-01-01T00:00:00", "2024-01-01T01:00:00", ...],
+      "values": [10, 12, 15, ...]
+    },
+    "daily_decision_hour": 12,
+    "n_lookahead_hours": 36,
+    "load_shift": {
+      "max_demand_advance": 2,
+      "max_demand_delay": 3,
+      "max_hourly_purchase": 20,
+      "max_rate": 10
+    }
+  }'
+```
+
+### Python API Client Example
+
+```python
+import requests
+
+# Basic optimization
+response = requests.post(
+    "http://localhost:8000/api/v1/optimize",
+    json={
+        "price": [30, 80, 20, 40, 35, 25],
+        "demand": [10, 15, 8, 12, 10, 9],
+        "max_demand_advance": 2,
+        "max_demand_delay": 3,
+        "max_hourly_purchase": 20,
+        "max_rate": 10
+    }
+)
+
+result = response.json()
+print(f"Cost savings: {result['cost_savings']:.2f} ct")
+print(f"Savings percentage: {result['cost_savings_percent']:.2f}%")
+```
+
+See `examples/api_example.py` for more comprehensive examples.
+
+### Deployment
+
+The API can be deployed to various platforms:
+
+- **Docker**: Create a Dockerfile with `uvicorn loadshift.api:app --host 0.0.0.0 --port 8000`
+- **Cloud Platforms**: Deploy to AWS, Google Cloud, Azure, or Heroku
+- **Production**: Use a production ASGI server like Gunicorn with Uvicorn workers
+
+**Note**: For production deployments, add authentication, rate limiting, and configure CORS appropriately.
 
 ## Documentation
 Check out our paper [Residential demand response: evaluating how much consumers could actually save](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5956838) for further details on how the package can be used to answer interesting research questions. Also see [TECHNICAL_DOC.md](TECHNICAL_DOC.md) for a more detailed explanation of the transfer matrix formulation and the moving horizon control strategy.

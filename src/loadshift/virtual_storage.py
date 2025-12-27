@@ -3,7 +3,7 @@
 Supports both python-mip (open-source) and Gurobi (commercial) solvers.
 """
 
-from typing import Any
+from typing import Any, Dict, Optional
 
 import numpy as np
 
@@ -143,9 +143,9 @@ class VirtualStorage:
         self,
         price: np.ndarray,
         demand: np.ndarray,
-        remove_from_history: np.ndarray | None = None,
-        add_to_history: np.ndarray | None = None,
-        n_control_hours: int | None = None,
+        remove_from_history: Optional[np.ndarray] = None,
+        add_to_history: Optional[np.ndarray] = None,
+        n_control_hours: Optional[int] = None,
         debug: bool = False,
     ) -> dict:
         """Optimize energy consumption using the transfer matrix approach.
@@ -302,7 +302,7 @@ class VirtualStorage:
         model: Any,
         ranges: TimeRanges,
         transfer_indices: TransferIndices,
-    ) -> dict[str, dict]:
+    ) -> Dict[str, dict]:
         """Create all decision variables for the transfer matrix optimization.
 
         Uses the solver adapter to create variables in a solver-agnostic way.
@@ -354,7 +354,7 @@ class VirtualStorage:
     def _add_objective_function(
         self,
         model: Any,
-        variables: dict[str, dict],
+        variables: Dict[str, dict],
         price: np.ndarray,
         ranges: TimeRanges,
     ) -> None:
@@ -372,7 +372,7 @@ class VirtualStorage:
 
         # Minimize purchase cost
         objective = s.sum(
-            [variables["purchase"][t] * price[t] for t in ranges.local_time]
+            [variables["purchase"][t] * float(price[t]) for t in ranges.local_time]
         )
 
         s.set_objective(model, objective, sense="minimize")
@@ -380,7 +380,7 @@ class VirtualStorage:
     def _add_spillover_constraints(
         self,
         model: Any,
-        variables: dict[str, dict],
+        variables: Dict[str, dict],
         ranges: TimeRanges,
         transfer_indices: TransferIndices,
         remove_from_history: np.ndarray,
@@ -407,13 +407,13 @@ class VirtualStorage:
             if transfer_indices.move_to_indices[i]:
                 s.add_constraint(
                     model,
-                    remove_from_history[i]
-                    == s.sum(
+                    s.sum(
                         [
                             variables["transfer"][(i, j)]
                             for j in transfer_indices.move_to_indices[i]
                         ]
-                    ),
+                    )
+                    == float(remove_from_history[i]),
                     name=f"Remove_from_historical_{i}",
                 )
 
@@ -421,20 +421,20 @@ class VirtualStorage:
             if transfer_indices.get_from_indices[j]:
                 s.add_constraint(
                     model,
-                    add_to_history[j]
-                    == s.sum(
+                    s.sum(
                         [
                             variables["transfer"][(i, j)]
                             for i in transfer_indices.get_from_indices[j]
                         ]
-                    ),
+                    )
+                    == float(add_to_history[j]),
                     name=f"Add_to_historical_{j}",
                 )
 
     def _add_control_constraints(
         self,
         model: Any,
-        variables: dict[str, dict],
+        variables: Dict[str, dict],
         ranges: TimeRanges,
         transfer_indices: TransferIndices,
         demand: np.ndarray,
@@ -473,7 +473,7 @@ class VirtualStorage:
             )
             s.add_constraint(
                 model,
-                variables["remove_from"][t] <= demand[t],
+                variables["remove_from"][t] <= float(demand[t]),
                 name=f"Remove_must_be_smaller_than_demand_{t}",
             )
 
@@ -497,14 +497,14 @@ class VirtualStorage:
             s.add_constraint(
                 model,
                 variables["purchase"][t]
-                == (demand[t] + variables["add_to"][t] - variables["remove_from"][t]),
+                == (float(demand[t]) + variables["add_to"][t] - variables["remove_from"][t]),
                 name=f"Purchase_at_{t}",
             )
 
     def _add_charge_direction_constraints(
         self,
         model: Any,
-        variables: dict[str, dict],
+        variables: Dict[str, dict],
         ranges: TimeRanges,
     ) -> None:
         """Add charge direction mutual exclusivity constraints.
@@ -539,7 +539,7 @@ class VirtualStorage:
 
     def _validate_optional_array(
         self,
-        array: np.ndarray | None,
+        array: Optional[np.ndarray],
         expected_size: int,
         name: str,
         default_value: float = 0.0,
@@ -579,7 +579,7 @@ class VirtualStorage:
         self,
         price: np.ndarray,
         demand: np.ndarray,
-        n_control_hours: int | None,
+        n_control_hours: Optional[int],
     ) -> tuple[int, int]:
         """Initialize and validate time parameters for optimization."""
         # Validate array lengths match
