@@ -372,7 +372,7 @@ class VirtualStorage:
 
         # Minimize purchase cost
         objective = s.sum(
-            [variables["purchase"][t] * price[t] for t in ranges.local_time]
+            [variables["purchase"][t] * float(price[t]) for t in ranges.local_time]
         )
 
         s.set_objective(model, objective, sense="minimize")
@@ -407,13 +407,13 @@ class VirtualStorage:
             if transfer_indices.move_to_indices[i]:
                 s.add_constraint(
                     model,
-                    remove_from_history[i]
-                    == s.sum(
+                    s.sum(
                         [
                             variables["transfer"][(i, j)]
                             for j in transfer_indices.move_to_indices[i]
                         ]
-                    ),
+                    )
+                    == float(remove_from_history[i]),
                     name=f"Remove_from_historical_{i}",
                 )
 
@@ -421,13 +421,13 @@ class VirtualStorage:
             if transfer_indices.get_from_indices[j]:
                 s.add_constraint(
                     model,
-                    add_to_history[j]
-                    == s.sum(
+                    s.sum(
                         [
                             variables["transfer"][(i, j)]
                             for i in transfer_indices.get_from_indices[j]
                         ]
-                    ),
+                    )
+                    == float(add_to_history[j]),
                     name=f"Add_to_historical_{j}",
                 )
 
@@ -473,7 +473,7 @@ class VirtualStorage:
             )
             s.add_constraint(
                 model,
-                variables["remove_from"][t] <= demand[t],
+                variables["remove_from"][t] <= float(demand[t]),
                 name=f"Remove_must_be_smaller_than_demand_{t}",
             )
 
@@ -497,7 +497,7 @@ class VirtualStorage:
             s.add_constraint(
                 model,
                 variables["purchase"][t]
-                == (demand[t] + variables["add_to"][t] - variables["remove_from"][t]),
+                == (float(demand[t]) + variables["add_to"][t] - variables["remove_from"][t]),
                 name=f"Purchase_at_{t}",
             )
 
