@@ -228,12 +228,12 @@ async def optimize_moving_horizon(
     ```json
     {
         "price_data": {
-            "timestamps": ["2024-01-01T00:00:00", "2024-01-01T01:00:00", ...],
-            "values": [30, 35, 40, ...]
+            "timestamps": ["2024-01-01T00:00:00", "2024-01-01T01:00:00"],
+            "values": [30, 35]
         },
         "demand_data": {
-            "timestamps": ["2024-01-01T00:00:00", "2024-01-01T01:00:00", ...],
-            "values": [10, 12, 15, ...]
+            "timestamps": ["2024-01-01T00:00:00", "2024-01-01T01:00:00"],
+            "values": [10, 12]
         },
         "daily_decision_hour": 12,
         "n_lookahead_hours": 36,
@@ -277,12 +277,8 @@ async def optimize_moving_horizon(
         results_df = result["results"]
 
         # Calculate costs
-        original_cost = float(
-            (results_df["price"] * results_df["original_demand"]).sum()
-        )
-        optimized_cost = float(
-            (results_df["price"] * results_df["optimal_demand"]).sum()
-        )
+        original_cost = float((price_df["price"] * demand_df["demand"]).sum())
+        optimized_cost = float((price_df["price"] * results_df["demand"]).sum())
         cost_savings = original_cost - optimized_cost
         cost_savings_percent = (
             (cost_savings / original_cost * 100) if original_cost > 0 else 0.0
@@ -291,10 +287,10 @@ async def optimize_moving_horizon(
         # Build response
         return MovingHorizonResponse(
             timestamps=[ts.isoformat() for ts in results_df.index],
-            original_demand=results_df["original_demand"].tolist(),
-            optimal_demand=results_df["optimal_demand"].tolist(),
+            original_demand=demand_df["demand"].tolist(),
+            optimal_demand=results_df["demand"].tolist(),
             shift=results_df["shift"].tolist(),
-            price=results_df["price"].tolist(),
+            price=price_df["price"].tolist(),
             original_cost=original_cost,
             optimized_cost=optimized_cost,
             cost_savings=cost_savings,
